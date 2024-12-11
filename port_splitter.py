@@ -81,7 +81,6 @@ def split_by_port(df):
 def main():
     st.title('CSV Processing Application')
     
-    # Initialize session state
     if 'step' not in st.session_state:
         st.session_state.step = 1
     if 'combined_df' not in st.session_state:
@@ -91,38 +90,36 @@ def main():
     if 'port_dfs' not in st.session_state:
         st.session_state.port_dfs = None
 
-    # Progress bar
     st.progress(st.session_state.step/3)
     st.write(f"Step {st.session_state.step} of 3")
 
-    # Step 1: File Combination
     if st.session_state.step == 1:
         st.header("Step 1: Combine CSV Files")
         uploaded_files = st.file_uploader("Upload CSV files", type='csv', accept_multiple_files=True)
         
         if uploaded_files:
-            # In Step 1 section, replace the existing proceed button code with:
-if st.button('Combine Files'):
-    with st.spinner('Combining files...'):
-        combined_df, error = combine_csv_files(uploaded_files)
-        if error:
-            st.error(error)
-        else:
-            st.session_state.combined_df = combined_df
-            st.write("Preview of combined data:")
-            st.dataframe(combined_df.head())
-            st.success('Files combined successfully!')
-            
-            # Change this part
-            if st.button('Proceed to Step 2', key='proceed_step2'):
-                st.session_state.step = 2
-                st.rerun()
+            combine_button = st.button('Combine Files', key='combine_files')
+            if combine_button:
+                with st.spinner('Combining files...'):
+                    combined_df, error = combine_csv_files(uploaded_files)
+                    if error:
+                        st.error(error)
+                    else:
+                        st.session_state.combined_df = combined_df
+                        st.write("Preview of combined data:")
+                        st.dataframe(combined_df.head())
+                        st.success('Files combined successfully!')
+                        
+            if st.session_state.combined_df is not None:
+                if st.button('Proceed to Step 2', key='proceed_to_step2'):
+                    st.session_state.step = 2
+                    st.rerun()
 
-    # Step 2: Process Data
     elif st.session_state.step == 2:
         st.header("Step 2: Process Data")
         if st.session_state.combined_df is not None:
-            if st.button('Process Data'):
+            process_button = st.button('Process Data', key='process_data')
+            if process_button:
                 with st.spinner('Processing data...'):
                     processed_df, error = process_csv(st.session_state.combined_df)
                     if error:
@@ -132,15 +129,17 @@ if st.button('Combine Files'):
                         st.write("Preview of processed data:")
                         st.dataframe(processed_df.head())
                         st.success('Data processed successfully!')
-                        if st.button('Proceed to Step 3'):
-                            st.session_state.step = 3
-                            st.experimental_rerun()
+                        
+            if st.session_state.processed_df is not None:
+                if st.button('Proceed to Step 3', key='proceed_to_step3'):
+                    st.session_state.step = 3
+                    st.rerun()
 
-    # Step 3: Split by Port
     elif st.session_state.step == 3:
         st.header("Step 3: Split by Port")
         if st.session_state.processed_df is not None:
-            if st.button('Split by Port'):
+            split_button = st.button('Split by Port', key='split_files')
+            if split_button:
                 with st.spinner('Splitting files...'):
                     port_dfs, error = split_by_port(st.session_state.processed_df)
                     if error:
@@ -148,25 +147,22 @@ if st.button('Combine Files'):
                     else:
                         st.session_state.port_dfs = port_dfs
                         
-                        # Create ZIP file containing all split files
                         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                         zip_buffer = io.BytesIO()
                         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
                             for port, df in port_dfs.items():
-                                # Create CSV for each port
                                 csv_buffer = io.StringIO()
                                 df.to_csv(csv_buffer, index=False)
                                 zip_file.writestr(f"PORT_{port}_{timestamp}.csv", csv_buffer.getvalue())
                         
-                        # Download buttons
                         st.download_button(
                             label="Download All Port Files (ZIP)",
                             data=zip_buffer.getvalue(),
                             file_name=f"port_files_{timestamp}.zip",
-                            mime="application/zip"
+                            mime="application/zip",
+                            key='download_zip'
                         )
                         
-                        # Individual file downloads
                         st.write("Download Individual Port Files:")
                         for port, df in port_dfs.items():
                             csv_buffer = io.StringIO()
@@ -176,7 +172,7 @@ if st.button('Combine Files'):
                                 data=csv_buffer.getvalue(),
                                 file_name=f"PORT_{port}_{timestamp}.csv",
                                 mime="text/csv",
-                                key=port
+                                key=f"download_{port}"
                             )
                             
                             st.write(f"\nPreview of {port} data:")
@@ -188,9 +184,9 @@ if st.button('Combine Files'):
     col1, col2 = st.columns(2)
     with col1:
         if st.session_state.step > 1:
-            if st.button('Previous Step'):
+            if st.button('Previous Step', key='prev_step'):
                 st.session_state.step -= 1
-                st.experimental_rerun()
+                st.rerun()
 
 if __name__ == "__main__":
     main()
