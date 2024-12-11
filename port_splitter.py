@@ -101,19 +101,22 @@ def main():
         uploaded_files = st.file_uploader("Upload CSV files", type='csv', accept_multiple_files=True)
         
         if uploaded_files:
-            if st.button('Combine Files'):
-                with st.spinner('Combining files...'):
-                    combined_df, error = combine_csv_files(uploaded_files)
-                    if error:
-                        st.error(error)
-                    else:
-                        st.session_state.combined_df = combined_df
-                        st.write("Preview of combined data:")
-                        st.dataframe(combined_df.head())
-                        st.success('Files combined successfully!')
-                        if st.button('Proceed to Step 2'):
-                            st.session_state.step = 2
-                            st.experimental_rerun()
+            # In Step 1 section, replace the existing proceed button code with:
+if st.button('Combine Files'):
+    with st.spinner('Combining files...'):
+        combined_df, error = combine_csv_files(uploaded_files)
+        if error:
+            st.error(error)
+        else:
+            st.session_state.combined_df = combined_df
+            st.write("Preview of combined data:")
+            st.dataframe(combined_df.head())
+            st.success('Files combined successfully!')
+            
+            # Change this part
+            if st.button('Proceed to Step 2', key='proceed_step2'):
+                st.session_state.step = 2
+                st.rerun()
 
     # Step 2: Process Data
     elif st.session_state.step == 2:
